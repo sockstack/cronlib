@@ -19,6 +19,8 @@ const (
 	ExpressEveryMonth = "0 1 1 * *" // 每个月
 )
 
+var debug = false
+
 // Scheduler Cron调度程序
 type Scheduler struct {
 	cfg             *Config           // 调度器配置
@@ -59,7 +61,7 @@ func (s *Scheduler) AddJobs(jobs ...*Job) error {
 			return errors.Wrapf(err, "[error] gocronScheduler add job got err")
 		}
 
-		log.Printf("add job[%s] success...", job.name)
+		logf("add job[%s] success...", job.name)
 		cronJob.Tag(job.name)
 	}
 	return nil
@@ -68,7 +70,7 @@ func (s *Scheduler) AddJobs(jobs ...*Job) error {
 // Start 启动Cron定时服务
 func (s *Scheduler) Start() {
 	// 是否启动非阻塞任务
-	log.Println("start cron jobs ...")
+	logf("start cron jobs ...")
 	if s.cfg.Async {
 		s.gocronScheduler.StartAsync()
 	} else {
@@ -83,7 +85,7 @@ func parseTimeZone(name string) *time.Location {
 	}
 	cronTimeLoc, err := time.LoadLocation(name)
 	if err != nil {
-		log.Fatalf("parse cron timezone name got err: %s", err)
+		logf("parse cron timezone name got err: %s", err)
 	}
 	return cronTimeLoc
 }
@@ -94,20 +96,32 @@ func wrapLockerForJob(locker Locker, job *Job) func() {
 		if locker != nil {
 			// 抢分布式锁，延时30s自动解锁，限定cron调度的并发
 			if err := locker.Lock(job.name, 30*time.Second); err != nil {
-				log.Printf("locker required, get cron locker fail, %s", err)
+				logf("locker required, get cron locker fail, %s", err)
 				return
 			}
 
 			// 获得锁的执行任务
-			log.Printf("locker required, get cron locker success, exec cron job [#%s]...", job.name)
+			logf("locker required, get cron locker success, exec cron job [#%s]...", job.name)
 			job.exec()
+			// 执行完成 解锁
+			locker.UnLock(job.name)
 			return
 		}
 
 		// 无锁直接执行
-		log.Printf("no locker required, exec cron job [#%s]...", job.name)
+		logf("no locker required, exec cron job [#%s]...", job.name)
 		job.exec()
-		// 执行完成解锁
+		// 执行完成 解锁
 		locker.UnLock(job.name)
 	}
+}
+
+func logf(format string, v ...any) {
+	if debug {
+		log.Printf(format, v...)
+	}
+}
+
+func SetDebug(b bool) {
+	debug = b
 }
