@@ -107,5 +107,7 @@ func wrapLockerForJob(locker Locker, job *Job) func() {
 		// 无锁直接执行
 		log.Printf("no locker required, exec cron job [#%s]...", job.name)
 		job.exec()
+		// 执行完成解锁
+		locker.UnLock(job.name)
 	}
 }
