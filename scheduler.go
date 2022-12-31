@@ -53,7 +53,7 @@ func NewScheduler(cfg *Config, locker Locker) *Scheduler {
 func (s *Scheduler) AddJobs(jobs ...*Job) error {
 	for _, job := range jobs {
 		cronJob, err := s.gocronScheduler.
-			Cron(job.express).
+			CronWithSeconds(job.express).
 			Do(wrapLockerForJob(s.locker, job))
 		if err != nil {
 			return errors.Wrapf(err, "[error] gocronScheduler add job got err")
