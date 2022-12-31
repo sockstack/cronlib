@@ -1,6 +1,6 @@
 module github.com/sockstack/cronlib
 
-go 1.17
+go 1.19
 
 require (
 	github.com/bsm/redislock v0.7.2
