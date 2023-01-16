@@ -103,16 +103,12 @@ func wrapLockerForJob(locker Locker, job *Job) func() {
 			// 获得锁的执行任务
 			logf("locker required, get cron locker success, exec cron job [#%s]...", job.name)
 			job.exec()
-			// 执行完成 解锁
-			locker.UnLock(job.name)
 			return
 		}
 
 		// 无锁直接执行
 		logf("no locker required, exec cron job [#%s]...", job.name)
 		job.exec()
-		// 执行完成 解锁
-		locker.UnLock(job.name)
 	}
 }
 
